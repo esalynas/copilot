@@ -151,8 +151,8 @@
         }
       `;
 
-      // Endpoint directo apuntando al modelo gemini-2.5-flash confirmado en tu lista
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      // Se utiliza el modelo gemini-3.5-flash activo en tu cuenta
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
       const payload = {
         contents: [{
