@@ -140,8 +140,8 @@
         Extrae la intención principal del documento, un resumen explicativo y los campos clave.
       `;
 
-      // Modelo compatible con Free Tier y endpoint v1beta oficial
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // ALIAS ACTIVO Y COMPATIBLE EN EL ENDPOINT V1BETA
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
       const payload = {
         contents: [{
