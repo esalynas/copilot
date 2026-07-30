@@ -12,7 +12,7 @@
     header h1 { font-size: 1.25rem; font-weight: 600; color: #38bdf8; }
     
     .api-container { display: flex; align-items: center; gap: 8px; }
-    .api-container input { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; width: 220px; }
+    .api-container input { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; width: 240px; }
 
     main { flex: 1; display: grid; grid-template-columns: 1fr 380px; gap: 1rem; padding: 1.5rem; }
     @media (max-width: 850px) { main { grid-template-columns: 1fr; } }
@@ -32,9 +32,10 @@
     .card-title { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem; font-weight: bold; }
     .intent-badge { background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
 
-    .field-group { margin-bottom: 0.5rem; }
-    .field-label { font-size: 0.75rem; color: #64748b; }
-    .field-value { font-size: 0.9rem; color: #f1f5f9; font-weight: 500; }
+    .field-group { margin-bottom: 0.6rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.4rem; }
+    .field-group:last-child { border-bottom: none; }
+    .field-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    .field-value { font-size: 0.9rem; color: #f1f5f9; font-weight: 500; word-break: break-word; }
 
     .btn-action { background: #0284c7; color: white; border: none; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; }
     .btn-action:disabled { background: #334155; cursor: not-allowed; }
@@ -45,7 +46,7 @@
 <body>
 
   <header>
-    <h1>⚡ Copilot Registral (Real API)</h1>
+    <h1>⚡ Copilot Registral (Gemini 1.5 Flash)</h1>
     <div class="api-container">
       <label for="apiKey" style="font-size: 0.8rem; color: #94a3b8;">API Key:</label>
       <input type="password" id="apiKey" placeholder="Pega tu API Key de Gemini">
@@ -56,8 +57,8 @@
     <!-- Cargador de Imagen -->
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="drop-zone-prompt" id="dropPrompt">
-        <p style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">Haz clic aquí para subir una imagen / captura</p>
-        <p style="font-size: 0.85rem;">Sube una foto de un documento, recorte o escritura pública</p>
+        <p style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">Haz clic aquí para subir una imagen / recorte</p>
+        <p style="font-size: 0.85rem;">Sube fotos de escrituras, notas manuscritas o documentos con sellos</p>
       </div>
       <img id="imagePreview" alt="Previsualización">
       <input type="file" id="fileInput" accept="image/*" style="display: none;">
@@ -117,7 +118,7 @@
       reader.readAsDataURL(file);
     });
 
-    // Llamada directa a la API REST de Gemini desde JS
+    // Llamada a la API REST de Gemini con modelo compatible
     async function analizarImagen() {
       const apiKey = document.getElementById('apiKey').value.trim();
       if (!apiKey) {
@@ -131,23 +132,26 @@
       spinner.style.display = 'block';
       btnAnalyze.disabled = true;
 
-      // Prompt estructurado para forzar respuesta en JSON
+      // Prompt optimizado para documentos registrales y manuscritos
       const promptText = `
-        Analiza esta imagen de un documento registral u oficial.
-        Devuelve ÚNICAMENTE un objeto JSON con esta estructura exacta sin formato markdown alrededor:
+        Analiza detenidamente esta imagen de un documento registral u oficial.
+        Puede contener texto manuscrito, sellos o membretes oficiales.
+        
+        Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura (sin etiquetas de código markdown alrededor, solo el objeto JSON plano):
         {
-          "intencion": "Ej: Nombramiento, Reforma Estatutaria, Compraventa, Desconocido",
-          "resumen": "Breve explicación de lo que trata el documento",
+          "intencion": "Ej: Nombramiento, Reforma Estatutaria, Revisión de Representación Legal, Consulta, Desconocido",
+          "resumen": "Resumen claro y breve de lo que trata el documento o la nota manuscrita",
           "campos": {
-            "numero_documento_o_escritura": "Valor o N/A",
-            "entidad_o_sociedad": "Valor o N/A",
-            "personas_involucradas": "Nombres encontrados o N/A",
-            "fechas": "Fechas encontradas o N/A"
+            "entidad_o_camara": "Nombre de la entidad o Cámara de Comercio si se observa",
+            "personas_involucradas": "Nombres de personas o representantes mencionados",
+            "tramite_o_modulo": "Detalles del trámite, módulo u observaciones citadas",
+            "fechas_o_anos": "Fechas o años identificados en el texto"
           }
         }
       `;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      // Endpoint corregido con gemini-1.5-flash
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
       const payload = {
         contents: [{
@@ -178,8 +182,9 @@
         }
 
         let rawText = data.candidates[0].content.parts[0].text;
-        // Limpiar el formato por si Gemini devuelve etiquetas de Markdown
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // Limpiar cualquier bloque Markdown que la IA devuelva
+        rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
         const result = JSON.parse(rawText);
         mostrarResultados(result);
@@ -206,7 +211,7 @@
           div.className = 'field-group';
           div.innerHTML = `
             <div class="field-label">${formattedKey}</div>
-            <div class="field-value">${value}</div>
+            <div class="field-value">${value || 'N/A'}</div>
           `;
           fieldsContainer.appendChild(div);
         }
