@@ -1,0 +1,41 @@
+<!doctype html><html lang=es><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>Copiloto Registral IA</title><style>
+body{margin:0;background:#0b1020;color:#eef;font:15px Arial}header{padding:16px;background:#131d35}main{max-width:1100px;margin:auto;padding:20px}
+.card{background:#17233c;border:1px solid #2d4a6a;border-radius:12px;padding:16px;margin:12px 0}
+button{padding:10px 18px;background:#2563eb;color:#fff;border:0;border-radius:8px;cursor:pointer}
+#o{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7)}#b{position:absolute;border:2px dashed #4ade80;background:rgba(74,222,128,.15)}
+#log{height:220px;overflow:auto;background:#08111f;padding:10px;font-family:monospace}
+.bar{height:12px;background:#223}.fill{height:100%;width:0;background:#4ade80;transition:.4s}
+.badge{display:inline-block;padding:5px 10px;border-radius:20px;background:#1e3a5f}
+.ok{color:#4ade80}.w{color:#fbbf24}
+</style><header><h2 style="margin:0">🧠 Copiloto Registral IA</h2><small>Demo conceptual</small></header>
+<main><div class=card><button onclick=sel()>Seleccionar área del visor</button>
+<button onclick=run()>Iniciar análisis</button><p id=s>Esperando...</p><div class=bar><div id=f class=fill></div></div></div>
+<div class=card><h3>Motor IA</h3><div id=log></div></div>
+<div class=card id=r style="display:none"><h2>Concepto Preliminar</h2>
+<p><span class=badge>Intención detectada</span></p><h1>Nombramiento de Representante Legal</h1>
+<p>Confianza IA: <b>97%</b></p><hr>
+<p class=ok>✔ Documento identificado como Acta.</p>
+<p class=ok>✔ Se detectó órgano competente.</p>
+<p class=ok>✔ Se encontró convocatoria.</p>
+<p class=ok>✔ Se encontró quórum deliberatorio.</p>
+<p class=ok>✔ Se detectó decisión de nombramiento.</p>
+<p class=w>⚠ No se encontró aceptación expresa del cargo.</p>
+<p class=w>⚠ Validar facultad estatutaria del órgano.</p>
+<h3>Evidencias</h3>
+<ul><li>Pág.1: "Asamblea General Extraordinaria"</li>
+<li>Pág.2: "Existe quórum..."</li>
+<li>Pág.3: "Se nombra como representante legal..."</li></ul></div></main>
+<div id=o><div id=b></div></div>
+<script>
+let d=false,x,y,o=document.getElementById('o'),b=document.getElementById('b');
+function sel(){alert("Seleccione el área del visor (simulación).");o.style.display='block'}
+o.onmousedown=e=>{d=true;x=e.clientX;y=e.clientY;b.style.left=x+'px';b.style.top=y+'px'}
+o.onmousemove=e=>{if(!d)return;let l=Math.min(x,e.clientX),t=Math.min(y,e.clientY);b.style.left=l+'px';b.style.top=t+'px';b.style.width=Math.abs(e.clientX-x)+'px';b.style.height=Math.abs(e.clientY-y)+'px'}
+o.onmouseup=()=>{d=false;o.style.display='none';s.textContent='Área registrada. Lista para analizar.'}
+const steps=[
+"Capturando página 1","OCR completado","Clasificando documento","Detectando intención jurídica",
+"Intención probable: Nombramiento","Analizando convocatoria","Analizando quórum",
+"Analizando nombramiento","Buscando aceptación","Construyendo concepto"];
+function run(){log.innerHTML='';r.style.display='none';let i=0;let t=setInterval(()=>{if(i==steps.length){clearInterval(t);f.style.width='100%';s.textContent='Análisis finalizado';r.style.display='block';return;}let p=((i+1)/steps.length*100)|0;f.style.width=p+'%';s.textContent=steps[i];log.innerHTML+='&gt; '+steps[i]+'<br>';log.scrollTop=99999;i++;},700)}
+</script></html>
