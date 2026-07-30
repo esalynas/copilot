@@ -119,83 +119,83 @@
     });
 
     // Llamada a la API REST de Gemini con modelo compatible
-    async function analizarImagen() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      if (!apiKey) {
-        alert("Por favor ingresa tu API Key en la esquina superior derecha.");
-        return;
-      }
+   async function analizarImagen() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    alert("Por favor ingresa tu API Key en la esquina superior derecha.");
+    return;
+  }
 
-      const spinner = document.getElementById('spinner');
-      const btnAnalyze = document.getElementById('btnAnalyze');
-      
-      spinner.style.display = 'block';
-      btnAnalyze.disabled = true;
+  const spinner = document.getElementById('spinner');
+  const btnAnalyze = document.getElementById('btnAnalyze');
+  
+  spinner.style.display = 'block';
+  btnAnalyze.disabled = true;
 
-      // Prompt optimizado para documentos registrales y manuscritos
-      const promptText = `
-        Analiza detenidamente esta imagen de un documento registral u oficial.
-        Puede contener texto manuscrito, sellos o membretes oficiales.
-        
-        Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura (sin etiquetas de código markdown alrededor, solo el objeto JSON plano):
-        {
-          "intencion": "Ej: Nombramiento, Reforma Estatutaria, Revisión de Representación Legal, Consulta, Desconocido",
-          "resumen": "Resumen claro y breve de lo que trata el documento o la nota manuscrita",
-          "campos": {
-            "entidad_o_camara": "Nombre de la entidad o Cámara de Comercio si se observa",
-            "personas_involucradas": "Nombres de personas o representantes mencionados",
-            "tramite_o_modulo": "Detalles del trámite, módulo u observaciones citadas",
-            "fechas_o_anos": "Fechas o años identificados en el texto"
-          }
-        }
-      `;
-
-      // Endpoint corregido con gemini-1.5-flash
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-      const payload = {
-        contents: [{
-          parts: [
-            { text: promptText },
-            {
-              inline_data: {
-                mime_type: "image/jpeg",
-                data: base64Image
-              }
-            }
-          ]
-        }]
-      };
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        
-        if (data.error) {
-          alert("Error de API: " + data.error.message);
-          return;
-        }
-
-        let rawText = data.candidates[0].content.parts[0].text;
-        
-        // Limpiar cualquier bloque Markdown que la IA devuelva
-        rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-        const result = JSON.parse(rawText);
-        mostrarResultados(result);
-
-      } catch (err) {
-        alert("Ocurrió un error al procesar la imagen: " + err.message);
-      } finally {
-        spinner.style.display = 'none';
-        btnAnalyze.disabled = false;
+  const promptText = `
+    Analiza detenidamente esta imagen de un documento registral u oficial.
+    Puede contener texto manuscrito, sellos o membretes oficiales.
+    
+    Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura (sin etiquetas de código markdown alrededor, solo el objeto JSON plano):
+    {
+      "intencion": "Ej: Nombramiento, Reforma Estatutaria, Revisión de Representación Legal, Consulta, Desconocido",
+      "resumen": "Resumen claro y breve de lo que trata el documento o la nota manuscrita",
+      "campos": {
+        "entidad_o_camara": "Nombre de la entidad o Cámara de Comercio si se observa",
+        "personas_involucradas": "Nombres de personas o representantes mencionados",
+        "tramite_o_modulo": "Detalles del trámite, módulo u observaciones citadas",
+        "fechas_o_anos": "Fechas o años identificados en el texto"
       }
     }
+  `;
+
+  // ENDPOINT ACTUALIZADO A GEMINI 2.0 FLASH
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  const payload = {
+    contents: [{
+      parts: [
+        { text: promptText },
+        {
+          inline_data: {
+            mime_type: "image/jpeg",
+            data: base64Image
+          }
+        }
+      ]
+    }]
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    
+    if (data.error) {
+      alert("Error de API: " + data.error.message);
+      return;
+    }
+
+    let rawText = data.candidates[0].content.parts[0].text;
+    
+    // Limpiar cualquier bloque Markdown que la IA devuelva
+    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+    const result = JSON.parse(rawText);
+    mostrarResultados(result);
+
+  } catch (err) {
+    alert("Ocurrió un error al procesar la imagen: " + err.message);
+  } finally {
+    spinner.style.display = 'none';
+    btnAnalyze.disabled = false;
+  }
+}
+
 
     function mostrarResultados(res) {
       document.getElementById('intentValue').innerText = res.intencion || "No detectada";
