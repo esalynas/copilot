@@ -2,90 +2,223 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Prueba Autodetect de Gemini</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copilot Registral - Demo Funcional</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; background: #0f172a; color: #f8fafc; }
-    input { padding: 10px; width: 320px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 4px; }
-    button { padding: 10px 18px; background: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    button:hover { background: #0369a1; }
-    #log { margin-top: 1.5rem; padding: 1rem; background: #1e293b; border-radius: 6px; font-family: monospace; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; border: 1px solid #334155; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    header { background-color: #1e293b; padding: 1rem 2rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    header h1 { font-size: 1.25rem; font-weight: 600; color: #38bdf8; }
+    
+    .api-container { display: flex; align-items: center; gap: 8px; }
+    .api-container input { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; width: 240px; }
+
+    main { flex: 1; display: grid; grid-template-columns: 1fr 380px; gap: 1rem; padding: 1.5rem; }
+    @media (max-width: 850px) { main { grid-template-columns: 1fr; } }
+
+    /* Área de Drop / Previsualización */
+    .drop-zone { background: #1e293b; border: 2px dashed #334155; border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem; cursor: pointer; text-align: center; position: relative; min-height: 400px; }
+    .drop-zone:hover { border-color: #0284c7; }
+    .drop-zone img { max-width: 100%; max-height: 500px; border-radius: 6px; display: none; }
+    .drop-zone-prompt { color: #94a3b8; }
+
+    /* Panel del Copilot */
+    .copilot-panel { background-color: #1e293b; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; }
+    .panel-header { padding: 1rem; background: #0f172a; border-bottom: 1px solid #334155; font-weight: bold; font-size: 0.95rem; }
+    .panel-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; }
+
+    .card { background: #0f172a; border-radius: 6px; padding: 0.85rem; border: 1px solid #334155; }
+    .card-title { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem; font-weight: bold; }
+    .intent-badge { background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+
+    .field-group { margin-bottom: 0.6rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.4rem; }
+    .field-group:last-child { border-bottom: none; }
+    .field-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    .field-value { font-size: 0.9rem; color: #f1f5f9; font-weight: 500; word-break: break-word; }
+
+    .btn-action { background: #0284c7; color: white; border: none; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; }
+    .btn-action:disabled { background: #334155; cursor: not-allowed; }
+    
+    .spinner { display: none; color: #38bdf8; font-size: 0.85rem; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
 
-  <h2>🧪 Diagnosticador de API Key de Gemini</h2>
-  <p style="color: #94a3b8; margin-bottom: 1rem;">Descubrirá qué modelos están disponibles en tu cuenta y probará la conexión.</p>
-  
-  <input type="password" id="apiKey" placeholder="Pega tu API Key de Gemini">
-  <button onclick="diagnosticarAPI()">Diagnosticar y Probar</button>
+  <header>
+    <h1>⚡ Copilot Registral (Gemini Vision API)</h1>
+    <div class="api-container">
+      <label for="apiKey" style="font-size: 0.8rem; color: #94a3b8;">API Key:</label>
+      <input type="password" id="apiKey" placeholder="Pega tu API Key de Gemini">
+    </div>
+  </header>
 
-  <div id="log">El diagnóstico aparecerá aquí cuando presiones el botón...</div>
+  <main>
+    <!-- Cargador de Imagen -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-zone-prompt" id="dropPrompt">
+        <p style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">Haz clic aquí para subir una imagen / recorte</p>
+        <p style="font-size: 0.85rem;">Sube fotos de escrituras, notas manuscritas o documentos con sellos</p>
+      </div>
+      <img id="imagePreview" alt="Previsualización">
+      <input type="file" id="fileInput" accept="image/*" style="display: none;">
+    </div>
+
+    <!-- Panel de Resultados de Gemini -->
+    <aside class="copilot-panel">
+      <div class="panel-header">Resultados del Análisis</div>
+
+      <div class="panel-body">
+        <button class="btn-action" id="btnAnalyze" onclick="analizarImagen()" disabled>
+          Analizar Documento con Gemini
+        </button>
+
+        <div class="spinner" id="spinner">⏳ Procesando imagen con Gemini...</div>
+
+        <!-- Card 1: Intención -->
+        <div class="card">
+          <div class="card-title">Intención Detectada</div>
+          <span class="intent-badge" id="intentValue">Esperando imagen...</span>
+        </div>
+
+        <!-- Card 2: Campos Extraídos -->
+        <div class="card">
+          <div class="card-title">Campos Extraídos</div>
+          <div id="fieldsContainer">
+            <p style="font-size: 0.85rem; color: #64748b;">Los datos extraídos aparecerán aquí.</p>
+          </div>
+        </div>
+
+        <!-- Card 3: Resumen -->
+        <div class="card">
+          <div class="card-title">Resumen / Observaciones</div>
+          <p id="summaryValue" style="font-size: 0.85rem; color: #cbd5e1;">-</p>
+        </div>
+      </div>
+    </aside>
+  </main>
 
   <script>
-    async function diagnosticarAPI() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const log = document.getElementById('log');
+    let base64Image = "";
+    let mimeType = "image/jpeg";
 
+    // Manejo de la carga de la imagen
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      mimeType = file.type || "image/jpeg";
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        base64Image = evt.target.result.split(',')[1];
+        const preview = document.getElementById('imagePreview');
+        preview.src = evt.target.result;
+        preview.style.display = 'block';
+        document.getElementById('dropPrompt').style.display = 'none';
+        document.getElementById('btnAnalyze').disabled = false;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Llamada a la API REST de Gemini
+    async function analizarImagen() {
+      const apiKey = document.getElementById('apiKey').value.trim();
       if (!apiKey) {
-        alert("Ingresa tu API Key primero.");
+        alert("Por favor ingresa tu API Key en la esquina superior derecha.");
         return;
       }
 
-      log.innerHTML = "🔍 1. Consultando modelos disponibles en tu cuenta...\n";
+      const spinner = document.getElementById('spinner');
+      const btnAnalyze = document.getElementById('btnAnalyze');
+      
+      spinner.style.display = 'block';
+      btnAnalyze.disabled = true;
+
+      const promptText = `
+        Analiza esta imagen de un documento registral u oficial (puede contener manuscritos o sellos).
+        Extrae la intención principal del documento, un resumen explicativo y los campos clave.
+        Responde exclusivamente en formato JSON válido con esta estructura exacta:
+        {
+          "intencion": "string",
+          "resumen": "string",
+          "campos": {
+            "entidad_o_camara": "string",
+            "personas_involucradas": "string",
+            "tramite_o_modulo": "string",
+            "fechas_o_anos": "string"
+          }
+        }
+      `;
+
+      // Endpoint directo apuntando al modelo gemini-2.5-flash confirmado en tu lista
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{
+          parts: [
+            { text: promptText },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Image
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      };
 
       try {
-        // 1. Obtener la lista de modelos permitidos para tu Key
-        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-        const listResp = await fetch(listUrl);
-        const listData = await listResp.json();
-
-        if (listData.error) {
-          log.innerHTML += `❌ Error consultando modelos (${listData.error.code}): ${listData.error.message}\n`;
-          return;
-        }
-
-        // Filtramos solo los modelos que sirven para generar contenido
-        const modelosDisponibles = (listData.models || [])
-          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
-          .map(m => m.name);
-
-        log.innerHTML += `✅ Modelos encontrados en tu cuenta (${modelosDisponibles.length}):\n`;
-        modelosDisponibles.forEach(m => log.innerHTML += `   - ${m}\n`);
-
-        if (modelosDisponibles.length === 0) {
-          log.innerHTML += `⚠️ No se encontraron modelos con soporte para generateContent.\n`;
-          return;
-        }
-
-        // Seleccionar el modelo preferido (buscamos un flash o tomamos el primero)
-        const modeloElegido = modelosDisponibles.find(m => m.includes("flash")) || modelosDisponibles[0];
-        log.innerHTML += `\n🚀 2. Probando generación con el modelo: ${modeloElegido}...\n`;
-
-        // 2. Hacer la prueba de generación con el modelo hallado
-        const testUrl = `https://generativelanguage.googleapis.com/${modeloElegido}:generateContent?key=${apiKey}`;
-        const testResp = await fetch(testUrl, {
+        const response = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: "Responde solo: ¡Conexión exitosa a la API!" }] }]
-          })
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
         });
 
-        const testData = await testResp.json();
-
-        if (testData.error) {
-          log.innerHTML += `❌ Error al generar (${testData.error.code}): ${testData.error.message}\n`;
-        } else {
-          const texto = testData.candidates[0].content.parts[0].text;
-          log.innerHTML += `\n🎉 ¡ÉXITO TOTAL!\nRespuesta de la IA: "${texto}"\n`;
-          log.innerHTML += `\n📌 GUARDA ESTE NOMBRE DE MODELO PARA EL PROYECTO: ${modeloElegido}`;
+        const data = await response.json();
+        
+        if (data.error) {
+          alert("Error de API (" + data.error.code + "): " + data.error.message);
+          return;
         }
 
+        const rawText = data.candidates[0].content.parts[0].text;
+        const result = JSON.parse(rawText);
+        mostrarResultados(result);
+
       } catch (err) {
-        log.innerHTML += `❌ Error inesperado de red: ${err.message}\n`;
+        alert("Ocurrió un error al procesar la imagen: " + err.message);
+      } finally {
+        spinner.style.display = 'none';
+        btnAnalyze.disabled = false;
+      }
+    }
+
+    function mostrarResultados(res) {
+      document.getElementById('intentValue').innerText = res.intencion || "No detectada";
+      document.getElementById('summaryValue').innerText = res.resumen || "Sin resumen";
+
+      const fieldsContainer = document.getElementById('fieldsContainer');
+      fieldsContainer.innerHTML = '';
+
+      if (res.campos) {
+        for (const [key, value] of Object.entries(res.campos)) {
+          const formattedKey = key.replace(/_/g, ' ').toUpperCase();
+          const div = document.createElement('div');
+          div.className = 'field-group';
+          div.innerHTML = `
+            <div class="field-label">${formattedKey}</div>
+            <div class="field-value">${value || 'N/A'}</div>
+          `;
+          fieldsContainer.appendChild(div);
+        }
       }
     }
   </script>
-
 </body>
 </html>
