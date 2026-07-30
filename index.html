@@ -3,141 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Copilot Registral - Demo Visual</title>
+  <title>Copilot Registral - Demo Funcional</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
+    body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
     
-    /* Encabezado */
-    header { background-color: #1e293b; padding: 1rem 2rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 1.25rem; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-    .badge { background: #0284c7; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
-
-    /* Área Principal */
-    main { flex: 1; display: grid; grid-template-columns: 1fr 380px; gap: 1rem; padding: 1.5rem; overflow: hidden; }
-
-    /* Visor del Documento (Simulación de pantalla del usuario) */
-    .document-viewer { background: #334155; border-radius: 8px; padding: 1.5rem; position: relative; overflow: auto; display: flex; justify-content: center; }
-    .paper-doc { background: #fffbf0; color: #1e1e1e; width: 100%; max-width: 650px; min-height: 750px; padding: 2.5rem; border-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.6; }
+    header { background-color: #1e293b; padding: 1rem 2rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    header h1 { font-size: 1.25rem; font-weight: 600; color: #38bdf8; }
     
-    /* Simulación de sello y manuscrito */
-    .stamp { position: absolute; top: 120px; right: 40px; border: 3px double #b91c1c; color: #b91c1c; padding: 10px; opacity: 0.65; transform: rotate(-12deg); font-family: sans-serif; font-weight: bold; text-align: center; font-size: 12px; pointer-events: none; }
-    .handwriting { font-family: 'Brush Script MT', cursive, sans-serif; font-size: 18px; color: #1e3a8a; display: inline-block; border-bottom: 1px solid #1e3a8a; padding: 0 5px; }
+    .api-container { display: flex; align-items: center; gap: 8px; }
+    .api-container input { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; width: 220px; }
 
-    /* Recorte interactivo simulado */
-    .crop-selection { position: absolute; top: 110px; left: 30px; width: 88%; height: 180px; border: 2px dashed #0284c7; background: rgba(56, 189, 248, 0.1); border-radius: 4px; pointer-events: none; animation: pulse 2s infinite; }
-    .crop-tag { position: absolute; top: -24px; left: -2px; background: #0284c7; color: white; font-family: sans-serif; font-size: 11px; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+    main { flex: 1; display: grid; grid-template-columns: 1fr 380px; gap: 1rem; padding: 1.5rem; }
+    @media (max-width: 850px) { main { grid-template-columns: 1fr; } }
 
-    @keyframes pulse {
-      0% { border-color: #0284c7; }
-      50% { border-color: #38bdf8; }
-      100% { border-color: #0284c7; }
-    }
+    /* Área de Drop / Previsualización */
+    .drop-zone { background: #1e293b; border: 2px dashed #334155; border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem; cursor: pointer; text-align: center; position: relative; min-height: 400px; }
+    .drop-zone:hover { border-color: #0284c7; }
+    .drop-zone img { max-width: 100%; max-height: 500px; border-radius: 6px; display: none; }
+    .drop-zone-prompt { color: #94a3b8; }
 
     /* Panel del Copilot */
-    .copilot-panel { background-color: #1e293b; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; }
-    .panel-header { padding: 1rem; background: #0f172a; border-bottom: 1px solid #334155; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-    .panel-body { padding: 1rem; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+    .copilot-panel { background-color: #1e293b; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; }
+    .panel-header { padding: 1rem; background: #0f172a; border-bottom: 1px solid #334155; font-weight: bold; font-size: 0.95rem; }
+    .panel-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; }
 
-    /* Componentes del Análisis */
     .card { background: #0f172a; border-radius: 6px; padding: 0.85rem; border: 1px solid #334155; }
-    .card-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.5rem; font-weight: bold; }
-    .intent-badge { background: #059669; color: #ecfdf5; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+    .card-title { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem; font-weight: bold; }
+    .intent-badge { background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
 
     .field-group { margin-bottom: 0.5rem; }
     .field-label { font-size: 0.75rem; color: #64748b; }
     .field-value { font-size: 0.9rem; color: #f1f5f9; font-weight: 500; }
 
-    .raw-text { font-family: monospace; font-size: 0.8rem; background: #020617; padding: 8px; border-radius: 4px; color: #38bdf8; white-space: pre-wrap; word-break: break-all; }
-
-    /* Botón de Acción */
-    .btn-action { background: #0284c7; color: white; border: none; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: auto; }
-    .btn-action:hover { background: #0369a1; }
+    .btn-action { background: #0284c7; color: white; border: none; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; }
+    .btn-action:disabled { background: #334155; cursor: not-allowed; }
+    
+    .spinner { display: none; color: #38bdf8; font-size: 0.85rem; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🔍 Copilot de Validación Registral <span class="badge">Demo VLM</span></h1>
-    <span style="font-size: 0.85rem; color: #94a3b8;">Simulación de Selección en Pantalla</span>
+    <h1>⚡ Copilot Registral (Real API)</h1>
+    <div class="api-container">
+      <label for="apiKey" style="font-size: 0.8rem; color: #94a3b8;">API Key:</label>
+      <input type="password" id="apiKey" placeholder="Pega tu API Key de Gemini">
+    </div>
   </header>
 
   <main>
-    <!-- Contenedor del Documento Simulando la Pantalla del Usuario -->
-    <div class="document-viewer">
-      <div class="paper-doc">
-        <!-- Sello con texto superpuesto -->
-        <div class="stamp">
-          REGISTRO MERCANTIL<br>
-          ENTRADA N° 84920<br>
-          VERIFICADO - OK
-        </div>
-
-        <h2 style="text-align: center; margin-bottom: 1.5rem;">ESCRITURA PÚBLICA N° 4.521</h2>
-        
-        <p>En la ciudad de Bogotá, se otorga la presente acta de <b>REFORMA ESTATUTARIA Y NOMBRAMIENTO</b> de la sociedad denominada <i>Inversiones Globales S.A.S.</i></p>
-        <br>
-        <p><b>PRIMERO:</b> Nombrar como nuevo Representante Legal al ciudadano <span class="handwriting">Carlos Alberto Mendoza</span> con documento de identidad N° 1.020.304.505.</p>
-        <br>
-        <p><b>SEGUNDO:</b> Modificar la cláusula quinta referente al capital social, fijándolo en la suma de $500.000.000 COP.</p>
-
-        <!-- Cuadro de selección simulado de la app -->
-        <div class="crop-selection">
-          <div class="crop-tag">Área seleccionada por el usuario</div>
-        </div>
+    <!-- Cargador de Imagen -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-zone-prompt" id="dropPrompt">
+        <p style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">Haz clic aquí para subir una imagen / captura</p>
+        <p style="font-size: 0.85rem;">Sube una foto de un documento, recorte o escritura pública</p>
       </div>
+      <img id="imagePreview" alt="Previsualización">
+      <input type="file" id="fileInput" accept="image/*" style="display: none;">
     </div>
 
-    <!-- Panel del Copilot Asistente -->
+    <!-- Panel de Resultados de Gemini -->
     <aside class="copilot-panel">
-      <div class="panel-header">
-        ⚡ Análisis Inteligente (Gemini Vision)
-      </div>
+      <div class="panel-header">Resultados del Análisis</div>
 
       <div class="panel-body">
+        <button class="btn-action" id="btnAnalyze" onclick="analizarImagen()" disabled>
+          Analizar Documento con Gemini
+        </button>
+
+        <div class="spinner" id="spinner">⏳ Procesando imagen con Gemini...</div>
+
         <!-- Card 1: Intención -->
         <div class="card">
           <div class="card-title">Intención Detectada</div>
-          <span class="intent-badge">Reforma / Nombramiento</span>
+          <span class="intent-badge" id="intentValue">Esperando imagen...</span>
         </div>
 
         <!-- Card 2: Campos Extraídos -->
         <div class="card">
-          <div class="card-title">Campos Estructurados</div>
-          
-          <div class="field-group">
-            <div class="field-label">N° de Escritura</div>
-            <div class="field-value">4.521</div>
-          </div>
-
-          <div class="field-group">
-            <div class="field-label">Entidad / Sociedad</div>
-            <div class="field-value">Inversiones Globales S.A.S.</div>
-          </div>
-
-          <div class="field-group">
-            <div class="field-label">Persona Nombrada (Manuscrito)</div>
-            <div class="field-value" style="color: #38bdf8;">Carlos Alberto Mendoza</div>
-          </div>
-
-          <div class="field-group">
-            <div class="field-label">Sello de Entrada</div>
-            <div class="field-value">N° 84920 (Verificado)</div>
+          <div class="card-title">Campos Extraídos</div>
+          <div id="fieldsContainer">
+            <p style="font-size: 0.85rem; color: #64748b;">Los datos extraídos aparecerán aquí.</p>
           </div>
         </div>
 
-        <!-- Card 3: Texto Completo OCR Multimodal -->
+        <!-- Card 3: Resumen -->
         <div class="card">
-          <div class="card-title">OCR Multimodal (Inmune a Sellos)</div>
-          <div class="raw-text">"ESCRITURA PÚBLICA N° 4.521... NOMBRAMIENTO... Carlos Alberto Mendoza... REGISTRO MERCANTIL ENTRADA N° 84920"</div>
+          <div class="card-title">Resumen / Observaciones</div>
+          <p id="summaryValue" style="font-size: 0.85rem; color: #cbd5e1;">-</p>
         </div>
-
-        <button class="btn-action" onclick="alert('¡Datos validados y listos para enviar al sistema registral!')">
-          Aprobar y Registrar Datos
-        </button>
       </div>
     </aside>
   </main>
 
+  <script>
+    let base64Image = "";
+
+    // Manejo de la carga de la imagen
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        base64Image = evt.target.result.split(',')[1];
+        const preview = document.getElementById('imagePreview');
+        preview.src = evt.target.result;
+        preview.style.display = 'block';
+        document.getElementById('dropPrompt').style.display = 'none';
+        document.getElementById('btnAnalyze').disabled = false;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Llamada directa a la API REST de Gemini desde JS
+    async function analizarImagen() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) {
+        alert("Por favor ingresa tu API Key en la esquina superior derecha.");
+        return;
+      }
+
+      const spinner = document.getElementById('spinner');
+      const btnAnalyze = document.getElementById('btnAnalyze');
+      
+      spinner.style.display = 'block';
+      btnAnalyze.disabled = true;
+
+      // Prompt estructurado para forzar respuesta en JSON
+      const promptText = `
+        Analiza esta imagen de un documento registral u oficial.
+        Devuelve ÚNICAMENTE un objeto JSON con esta estructura exacta sin formato markdown alrededor:
+        {
+          "intencion": "Ej: Nombramiento, Reforma Estatutaria, Compraventa, Desconocido",
+          "resumen": "Breve explicación de lo que trata el documento",
+          "campos": {
+            "numero_documento_o_escritura": "Valor o N/A",
+            "entidad_o_sociedad": "Valor o N/A",
+            "personas_involucradas": "Nombres encontrados o N/A",
+            "fechas": "Fechas encontradas o N/A"
+          }
+        }
+      `;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{
+          parts: [
+            { text: promptText },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: base64Image
+              }
+            }
+          ]
+        }]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          alert("Error de API: " + data.error.message);
+          return;
+        }
+
+        let rawText = data.candidates[0].content.parts[0].text;
+        // Limpiar el formato por si Gemini devuelve etiquetas de Markdown
+        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const result = JSON.parse(rawText);
+        mostrarResultados(result);
+
+      } catch (err) {
+        alert("Ocurrió un error al procesar la imagen: " + err.message);
+      } finally {
+        spinner.style.display = 'none';
+        btnAnalyze.disabled = false;
+      }
+    }
+
+    function mostrarResultados(res) {
+      document.getElementById('intentValue').innerText = res.intencion || "No detectada";
+      document.getElementById('summaryValue').innerText = res.resumen || "Sin resumen";
+
+      const fieldsContainer = document.getElementById('fieldsContainer');
+      fieldsContainer.innerHTML = '';
+
+      if (res.campos) {
+        for (const [key, value] of Object.entries(res.campos)) {
+          const formattedKey = key.replace(/_/g, ' ').toUpperCase();
+          const div = document.createElement('div');
+          div.className = 'field-group';
+          div.innerHTML = `
+            <div class="field-label">${formattedKey}</div>
+            <div class="field-value">${value}</div>
+          `;
+          fieldsContainer.appendChild(div);
+        }
+      }
+    }
+  </script>
 </body>
 </html>
