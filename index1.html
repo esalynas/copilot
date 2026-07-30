@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copilot Registral - Demo Visual</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Encabezado */
+    header { background-color: #1e293b; padding: 1rem 2rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.25rem; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .badge { background: #0284c7; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
+
+    /* Área Principal */
+    main { flex: 1; display: grid; grid-template-columns: 1fr 380px; gap: 1rem; padding: 1.5rem; overflow: hidden; }
+
+    /* Visor del Documento (Simulación de pantalla del usuario) */
+    .document-viewer { background: #334155; border-radius: 8px; padding: 1.5rem; position: relative; overflow: auto; display: flex; justify-content: center; }
+    .paper-doc { background: #fffbf0; color: #1e1e1e; width: 100%; max-width: 650px; min-height: 750px; padding: 2.5rem; border-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.6; }
+    
+    /* Simulación de sello y manuscrito */
+    .stamp { position: absolute; top: 120px; right: 40px; border: 3px double #b91c1c; color: #b91c1c; padding: 10px; opacity: 0.65; transform: rotate(-12deg); font-family: sans-serif; font-weight: bold; text-align: center; font-size: 12px; pointer-events: none; }
+    .handwriting { font-family: 'Brush Script MT', cursive, sans-serif; font-size: 18px; color: #1e3a8a; display: inline-block; border-bottom: 1px solid #1e3a8a; padding: 0 5px; }
+
+    /* Recorte interactivo simulado */
+    .crop-selection { position: absolute; top: 110px; left: 30px; width: 88%; height: 180px; border: 2px dashed #0284c7; background: rgba(56, 189, 248, 0.1); border-radius: 4px; pointer-events: none; animation: pulse 2s infinite; }
+    .crop-tag { position: absolute; top: -24px; left: -2px; background: #0284c7; color: white; font-family: sans-serif; font-size: 11px; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+
+    @keyframes pulse {
+      0% { border-color: #0284c7; }
+      50% { border-color: #38bdf8; }
+      100% { border-color: #0284c7; }
+    }
+
+    /* Panel del Copilot */
+    .copilot-panel { background-color: #1e293b; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; }
+    .panel-header { padding: 1rem; background: #0f172a; border-bottom: 1px solid #334155; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+    .panel-body { padding: 1rem; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+
+    /* Componentes del Análisis */
+    .card { background: #0f172a; border-radius: 6px; padding: 0.85rem; border: 1px solid #334155; }
+    .card-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.5rem; font-weight: bold; }
+    .intent-badge { background: #059669; color: #ecfdf5; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+
+    .field-group { margin-bottom: 0.5rem; }
+    .field-label { font-size: 0.75rem; color: #64748b; }
+    .field-value { font-size: 0.9rem; color: #f1f5f9; font-weight: 500; }
+
+    .raw-text { font-family: monospace; font-size: 0.8rem; background: #020617; padding: 8px; border-radius: 4px; color: #38bdf8; white-space: pre-wrap; word-break: break-all; }
+
+    /* Botón de Acción */
+    .btn-action { background: #0284c7; color: white; border: none; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: auto; }
+    .btn-action:hover { background: #0369a1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔍 Copilot de Validación Registral <span class="badge">Demo VLM</span></h1>
+    <span style="font-size: 0.85rem; color: #94a3b8;">Simulación de Selección en Pantalla</span>
+  </header>
+
+  <main>
+    <!-- Contenedor del Documento Simulando la Pantalla del Usuario -->
+    <div class="document-viewer">
+      <div class="paper-doc">
+        <!-- Sello con texto superpuesto -->
+        <div class="stamp">
+          REGISTRO MERCANTIL<br>
+          ENTRADA N° 84920<br>
+          VERIFICADO - OK
+        </div>
+
+        <h2 style="text-align: center; margin-bottom: 1.5rem;">ESCRITURA PÚBLICA N° 4.521</h2>
+        
+        <p>En la ciudad de Bogotá, se otorga la presente acta de <b>REFORMA ESTATUTARIA Y NOMBRAMIENTO</b> de la sociedad denominada <i>Inversiones Globales S.A.S.</i></p>
+        <br>
+        <p><b>PRIMERO:</b> Nombrar como nuevo Representante Legal al ciudadano <span class="handwriting">Carlos Alberto Mendoza</span> con documento de identidad N° 1.020.304.505.</p>
+        <br>
+        <p><b>SEGUNDO:</b> Modificar la cláusula quinta referente al capital social, fijándolo en la suma de $500.000.000 COP.</p>
+
+        <!-- Cuadro de selección simulado de la app -->
+        <div class="crop-selection">
+          <div class="crop-tag">Área seleccionada por el usuario</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel del Copilot Asistente -->
+    <aside class="copilot-panel">
+      <div class="panel-header">
+        ⚡ Análisis Inteligente (Gemini Vision)
+      </div>
+
+      <div class="panel-body">
+        <!-- Card 1: Intención -->
+        <div class="card">
+          <div class="card-title">Intención Detectada</div>
+          <span class="intent-badge">Reforma / Nombramiento</span>
+        </div>
+
+        <!-- Card 2: Campos Extraídos -->
+        <div class="card">
+          <div class="card-title">Campos Estructurados</div>
+          
+          <div class="field-group">
+            <div class="field-label">N° de Escritura</div>
+            <div class="field-value">4.521</div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">Entidad / Sociedad</div>
+            <div class="field-value">Inversiones Globales S.A.S.</div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">Persona Nombrada (Manuscrito)</div>
+            <div class="field-value" style="color: #38bdf8;">Carlos Alberto Mendoza</div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">Sello de Entrada</div>
+            <div class="field-value">N° 84920 (Verificado)</div>
+          </div>
+        </div>
+
+        <!-- Card 3: Texto Completo OCR Multimodal -->
+        <div class="card">
+          <div class="card-title">OCR Multimodal (Inmune a Sellos)</div>
+          <div class="raw-text">"ESCRITURA PÚBLICA N° 4.521... NOMBRAMIENTO... Carlos Alberto Mendoza... REGISTRO MERCANTIL ENTRADA N° 84920"</div>
+        </div>
+
+        <button class="btn-action" onclick="alert('¡Datos validados y listos para enviar al sistema registral!')">
+          Aprobar y Registrar Datos
+        </button>
+      </div>
+    </aside>
+  </main>
+
+</body>
+</html>
