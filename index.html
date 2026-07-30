@@ -2,62 +2,87 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Prueba de API Gemini</title>
+  <title>Prueba Autodetect de Gemini</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; background: #111; color: #fff; }
-    input { padding: 8px; width: 300px; }
-    button { padding: 8px 16px; cursor: pointer; }
-    #result { margin-top: 1rem; padding: 1rem; background: #222; border-radius: 6px; }
+    body { font-family: sans-serif; padding: 2rem; background: #0f172a; color: #f8fafc; }
+    input { padding: 10px; width: 320px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 4px; }
+    button { padding: 10px 18px; background: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #0369a1; }
+    #log { margin-top: 1.5rem; padding: 1rem; background: #1e293b; border-radius: 6px; font-family: monospace; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; border: 1px solid #334155; }
   </style>
 </head>
 <body>
 
-  <h2>🧪 Prueba de conexión a la API de Gemini</h2>
+  <h2>🧪 Diagnosticador de API Key de Gemini</h2>
+  <p style="color: #94a3b8; margin-bottom: 1rem;">Descubrirá qué modelos están disponibles en tu cuenta y probará la conexión.</p>
   
-  <p>Ingresa tu API Key de Google AI Studio:</p>
-  <input type="password" id="apiKey" placeholder="Pega tu API Key aquí">
-  <button onclick="probarAPI()">Probar API</button>
+  <input type="password" id="apiKey" placeholder="Pega tu API Key de Gemini">
+  <button onclick="diagnosticarAPI()">Diagnosticar y Probar</button>
 
-  <div id="result">El resultado de la API aparecerá aquí...</div>
+  <div id="log">El diagnóstico aparecerá aquí cuando presiones el botón...</div>
 
   <script>
-    async function probarAPI() {
+    async function diagnosticarAPI() {
       const apiKey = document.getElementById('apiKey').value.trim();
-      const resultDiv = document.getElementById('result');
+      const log = document.getElementById('log');
 
       if (!apiKey) {
-        alert("Por favor ingresa una API Key.");
+        alert("Ingresa tu API Key primero.");
         return;
       }
 
-      resultDiv.innerText = "⏳ Conectando con Gemini...";
-
-      // Usamos el endpoint v1 oficial
-      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-      const payload = {
-        contents: [{
-          parts: [{ text: "Responde solo con esta frase: ¡La API de Gemini está funcionando correctamente!" }]
-        }]
-      };
+      log.innerHTML = "🔍 1. Consultando modelos disponibles en tu cuenta...\n";
 
       try {
-        const response = await fetch(url, {
+        // 1. Obtener la lista de modelos permitidos para tu Key
+        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const listResp = await fetch(listUrl);
+        const listData = await listResp.json();
+
+        if (listData.error) {
+          log.innerHTML += `❌ Error consultando modelos (${listData.error.code}): ${listData.error.message}\n`;
+          return;
+        }
+
+        // Filtramos solo los modelos que sirven para generar contenido
+        const modelosDisponibles = (listData.models || [])
+          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
+          .map(m => m.name);
+
+        log.innerHTML += `✅ Modelos encontrados en tu cuenta (${modelosDisponibles.length}):\n`;
+        modelosDisponibles.forEach(m => log.innerHTML += `   - ${m}\n`);
+
+        if (modelosDisponibles.length === 0) {
+          log.innerHTML += `⚠️ No se encontraron modelos con soporte para generateContent.\n`;
+          return;
+        }
+
+        // Seleccionar el modelo preferido (buscamos un flash o tomamos el primero)
+        const modeloElegido = modelosDisponibles.find(m => m.includes("flash")) || modelosDisponibles[0];
+        log.innerHTML += `\n🚀 2. Probando generación con el modelo: ${modeloElegido}...\n`;
+
+        // 2. Hacer la prueba de generación con el modelo hallado
+        const testUrl = `https://generativelanguage.googleapis.com/${modeloElegido}:generateContent?key=${apiKey}`;
+        const testResp = await fetch(testUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Responde solo: ¡Conexión exitosa a la API!" }] }]
+          })
         });
 
-        const data = await response.json();
+        const testData = await testResp.json();
 
-        if (data.error) {
-          resultDiv.innerHTML = `<span style="color: #f87171;">❌ Error de API (${data.error.code}): ${data.error.message}</span>`;
+        if (testData.error) {
+          log.innerHTML += `❌ Error al generar (${testData.error.code}): ${testData.error.message}\n`;
         } else {
-          const textoRespuesta = data.candidates[0].content.parts[0].text;
-          resultDiv.innerHTML = `<span style="color: #4ade80;">✅ Respuesta recibida:</span><br><br><b>${textoRespuesta}</b>`;
+          const texto = testData.candidates[0].content.parts[0].text;
+          log.innerHTML += `\n🎉 ¡ÉXITO TOTAL!\nRespuesta de la IA: "${texto}"\n`;
+          log.innerHTML += `\n📌 GUARDA ESTE NOMBRE DE MODELO PARA EL PROYECTO: ${modeloElegido}`;
         }
+
       } catch (err) {
-        resultDiv.innerHTML = `<span style="color: #f87171;">❌ Error de red: ${err.message}</span>`;
+        log.innerHTML += `❌ Error inesperado de red: ${err.message}\n`;
       }
     }
   </script>
